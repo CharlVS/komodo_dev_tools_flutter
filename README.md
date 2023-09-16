@@ -1,39 +1,53 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# Komodo Dev Tools for Flutter
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/guides/libraries/writing-package-pages).
+`komodo_dev_tools_flutter` is a development toolkit designed to streamline the Flutter development process at Komodo Platform. Initially, it focuses on providing custom linter rules tailored for our team. However, we have an ambitious roadmap to include other profiling, debugging tools, and possibly set Flutter code standards for our organization.
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-library-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/developing-packages).
--->
+## Installation
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+### 1. Using the Package Locally:
 
-## Features
+If you want to use or test the package from your local machine, follow these steps:
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/com.komodoplatform/komodo_dev_tools_flutter.git
+    ```
 
-## Getting started
+2. Add a local path `dev_dependency` in your `pubspec.yaml`:
+    ```yaml
+    dev_dependencies:
+      komodo_dev_tools_flutter:
+        path: /path/to/your/local/directory/komodo_dev_tools_flutter
+    ```
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+Replace `/path/to/your/local/directory` with the actual path where you've cloned the package.
 
-## Usage
+### 2. Using the Package from GitHub:
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
+If you prefer to use the package directly from our GitHub repository:
 
-```dart
-const like = 'sample';
+Add a Git `dev_dependency` in your `pubspec.yaml`:
+
+```yaml
+dev_dependencies:
+  komodo_dev_tools_flutter:
+    git:
+      url: https://github.com/KomodoPlatform/komodo_dev_tools_flutter.git
+      ref: main # Or a specific branch, tag, or commit hash
 ```
 
-## Additional information
+Remember to run:
+```bash
+dart pub get
+```
+to fetch the package after updating your `pubspec.yaml`.
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+## Roadmap
+
+- **Phase 1**: Focus on custom linter rules.
+- **Phase 2**: Integrate profiling and debugging tools.
+- **Phase 3**: Establish and enforce Flutter code standards for our organization.
+
+## Contribution
+
+We welcome contributions from all team members. If you have suggestions, improvements, or encounter any issues, please raise them in our GitHub repository.
