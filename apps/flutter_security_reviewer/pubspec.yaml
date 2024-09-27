@@ -7,8 +7,11 @@ environment:
   sdk: '>=3.4.4 <4.0.0'
 
 dependencies:
+  dart_git: ^0.0.2
+  file_picker: ^8.1.2
   flutter:
     sdk: flutter
+  shared_preferences: ^2.3.2
 
 dev_dependencies:
   flutter_test:
