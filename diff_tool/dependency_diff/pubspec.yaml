@@ -1,0 +1,17 @@
+name: dependency_diff
+description: A sample command-line application.
+version: 0.0.1
+publish_to: none
+# repository: https://github.com/my_org/my_repo
+
+environment:
+  sdk: ^3.2.6
+
+dependencies:
+  yaml: ^3.1.0
+  equatable: ^2.0.5
+  dolumns: ^2.0.1
+
+dev_dependencies:
+  lints: ^2.1.0
+  test: ^1.24.0
