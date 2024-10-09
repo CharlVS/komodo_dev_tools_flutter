@@ -1,11 +1,10 @@
 import 'dart:io';
 
+import 'package:dependency_diff/models/package.dart';
 import 'package:yaml/yaml.dart';
 
-import 'models/package.dart';
-
-export 'models/package.dart';
 export 'models/description.dart';
+export 'models/package.dart';
 
 List<List<String>> yamlDiff(
   Map<String, Package> basePackages,
@@ -20,7 +19,7 @@ List<List<String>> yamlDiff(
     'New Version',
     'Dependency',
     'Old SHA256',
-    'New SHA256'
+    'New SHA256',
   ]);
   diff.add([
     '-------',
@@ -29,7 +28,7 @@ List<List<String>> yamlDiff(
     '-----------',
     '----------',
     '----------',
-    '----------'
+    '----------',
   ]);
 
   for (final key in basePackages.keys) {
@@ -71,17 +70,21 @@ List<List<String>> yamlDiff(
 }
 
 Map<String, Package> packagesFromFile(String filePath) {
-  File file = File(filePath);
+  final File file = File(filePath);
   if (!file.existsSync()) {
     throw Exception('File not found: $filePath');
   }
 
-  String lines = file.readAsStringSync();
-  final yaml = loadYaml(lines);
-  final yamlPackages = yaml['packages'];
-  Map<String, Package> packages = {};
-  for (var key in yamlPackages.keys) {
-    packages[key] = Package.fromYaml(yamlPackages[key]);
+  final String lines = file.readAsStringSync();
+  return packagesFromString(lines);
+}
+
+Map<String, Package> packagesFromString(String fileContents) {
+  final yaml = loadYaml(fileContents);
+  final yamlPackages = yaml['packages'] as YamlMap;
+  final Map<String, Package> packages = {};
+  for (final key in yamlPackages.keys) {
+    packages[key as String] = Package.fromYaml(yamlPackages[key] as YamlMap);
   }
   return packages;
 }
