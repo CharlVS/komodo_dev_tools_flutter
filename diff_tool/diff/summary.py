@@ -24,7 +24,9 @@ def generate_summary_table(deps1: Dict, deps2: Dict) -> pd.DataFrame:
         old_sha256 = get_sha256(deps1.get(package_name, {}))
         new_sha256 = get_sha256(deps2.get(package_name, {}))
 
-        if old_sha256 != "-" and old_sha256 == new_sha256:
+        identicalHashes = old_sha256 != "-" and old_sha256 == new_sha256
+        identicalVersions = old_version == new_version and old_sha256 == new_sha256
+        if identicalHashes or identicalVersions:
             logging.debug(f'skipping package {package_name}: no change in sha256 hash')
             continue
 
@@ -43,14 +45,4 @@ def generate_summary_table(deps1: Dict, deps2: Dict) -> pd.DataFrame:
             "New sha256": new_sha256
         })
 
-    df = pd.DataFrame(summary_data).sort_values('Status')
-    
-    # Save as CSV
-    df.to_csv('package_summary.csv', index=False)
-    
-    # Save as markdown
-    with open('package_summary.md', 'w') as f:
-        f.write("# Package Dependencies Summary\n\n")
-        f.write(df.to_markdown(index=False))
-
-    return df
+    return pd.DataFrame(summary_data).sort_values(['Status', 'Package'], ascending=[True, True])

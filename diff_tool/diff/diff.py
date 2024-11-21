@@ -111,7 +111,11 @@ def main(repo_path: str, ref1: str, ref2: str, verbose: bool, skip_unchanged: bo
         old_dir, new_dir = process_packages(deps1, deps2, temp_dir, skip_unchanged)
 
         summary_df = generate_summary_table(deps1, deps2)
-        print(summary_df)
+        summary_df.to_csv('package_summary.csv', index=False)
+
+        with open('package_summary.md', 'w') as f:
+            f.write("# Package Dependencies Summary\n\n")
+            f.write(summary_df.to_markdown(index=False))
 
         sane_ref1 = re.sub(r'[^\w_. -]', '_', ref1)
         sane_ref2 = re.sub(r'[^\w_. -]', '_', ref2)
