@@ -7,6 +7,7 @@ import sys
 import tempfile
 from functools import partial
 from typing import Dict, Tuple
+import time
 
 from git_diff import generate_diff, get_dependencies
 from sources import (
@@ -70,8 +71,6 @@ def process_packages(
     os.makedirs(new_dir, exist_ok=True)
 
     package_names = list(set(deps1.keys()) | set(deps2.keys()))
-    
-    # Create a partial function with all args except package_name
     process_fn = partial(
         _process_single_package,
         deps1=deps1,
@@ -93,9 +92,7 @@ def process_packages(
     return old_dir, new_dir
 
 
-def main(repo_path: str, ref1: str, ref2: str, verbose: bool, skip_unchanged: bool):
-    configure_logging(verbose)
-
+def main(repo_path: str, ref1: str, ref2: str, skip_unchanged: bool):
     try:
         repo = Repo(repo_path)
         logging.info(f"Opened repository at {repo_path}.")
@@ -128,6 +125,7 @@ def main(repo_path: str, ref1: str, ref2: str, verbose: bool, skip_unchanged: bo
 
 
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser(
         description="Generate dependency code diffs between two Git refs."
     )
@@ -147,4 +145,5 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    main(args.repo_path, args.ref1, args.ref2, args.verbose, args.skip_unchanged)
+    configure_logging(args.verbose)
+    main(args.repo_path, args.ref1, args.ref2, args.skip_unchanged)

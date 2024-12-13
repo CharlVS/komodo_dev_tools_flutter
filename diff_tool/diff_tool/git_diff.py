@@ -1,5 +1,6 @@
 import fnmatch
 import logging
+import os
 import subprocess
 from typing import Any
 
@@ -38,22 +39,20 @@ def filter_packages_by_name(exclude_filter: list[str], packages: dict[str, Any])
 
     return filtered_packages
 
-
 def generate_diff(old_dir: str, new_dir: str, output_file: str) -> None:
     try:
         logging.info(f"Generating diff between {old_dir} and {new_dir}.")
+        
+        split_dir = f"{os.path.splitext(output_file)[0]}_split"
+        os.makedirs(split_dir, exist_ok=True)
+        
         with open(output_file, "w") as diff_file:
-            # ["git", "diff", "--no-index", old_dir, new_dir],
             subprocess.run(
-                # ["git", "diff", "--no-index", old_dir + "/", new_dir + "/"],
-                # ["git", "diff", "--no-index", "--no-prefix", old_dir, new_dir],
-                # ["git", "diff", "--no-index", "--relative", old_dir, new_dir],
                 ["git", "diff", "--no-index", old_dir, new_dir, "--diff-filter=d"],
                 stdout=diff_file,
                 text=True,
                 check=True,
             )
-        logging.info(f"Diff file written to {output_file}")
     except subprocess.CalledProcessError as e:
         if e.returncode == 1:  # Git diff returns 1 if there are differences
             logging.info(
@@ -61,3 +60,58 @@ def generate_diff(old_dir: str, new_dir: str, output_file: str) -> None:
             )
         else:
             logging.error(f"Error generating diff between directories: {e}")
+            
+    logging.info(f"Checking directory: {new_dir}")
+    try:
+        if not os.path.exists(new_dir):
+            logging.error(f"Directory does not exist: {new_dir}")
+            return
+            
+        contents = os.listdir(new_dir)
+        logging.info(f"Directory contents: {contents}")
+        
+        if not contents:
+            logging.warning(f"Directory is empty: {new_dir}")
+            return
+            
+        for package_dir in contents:
+            logging.info(f'Creating chunk file for: {package_dir}')
+            old_package_path = os.path.join(old_dir, package_dir)
+            new_package_path = os.path.join(new_dir, package_dir)
+            
+            if not os.path.exists(new_package_path):
+                logging.warning(f"Package path does not exist: {new_package_path}")
+                continue
+
+            if not os.path.exists(old_package_path):
+                os.makedirs(old_package_path)
+                logging.info(f"Created directory: {old_package_path}")
+
+            
+            package_diff_file = os.path.join(split_dir, f"{package_dir}.patch")
+            
+            try:
+                with open(package_diff_file, "w") as diff_file:
+                    subprocess.run(
+                        ["git", "diff", "--no-index", old_package_path, new_package_path, "--diff-filter=d"],
+                        stdout=diff_file,
+                        text=True,
+                        check=True,
+                    )
+                # Check file size and delete if empty
+                if os.path.getsize(package_diff_file) == 0:
+                    os.remove(package_diff_file)
+                    logging.info(f"Deleted empty diff file: {package_diff_file}")
+                else:
+                    logging.info(f"Package diff written to {package_diff_file}")
+            except subprocess.CalledProcessError as e:
+                if e.returncode != 1:  # Ignore expected diff return code
+                    logging.error(f"Error generating diff for package {package_dir}: {e}")
+
+    except OSError as e:
+        logging.error(f"Error accessing directory {new_dir}: {e}")
+                
+    logging.info(f"Main diff file written to {output_file}")
+    logging.info(f"Split diffs written to {split_dir}")
+        
+    
