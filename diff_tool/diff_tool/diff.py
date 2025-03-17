@@ -74,8 +74,8 @@ def process_packages(
     if max_workers is None:
         max_workers = max(1, multiprocessing.cpu_count())
     
-    old_dir = os.path.join(temp_dir, "old", "code")
-    new_dir = os.path.join(temp_dir, "new", "code")
+    old_dir = os.path.join(temp_dir, "old", "packages")
+    new_dir = os.path.join(temp_dir, "new", "packages")
     os.makedirs(old_dir, exist_ok=True)
     os.makedirs(new_dir, exist_ok=True)
 
