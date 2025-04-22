@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./diff_tool/diff_tool"
+    ]
+}

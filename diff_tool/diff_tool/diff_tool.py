@@ -11,22 +11,32 @@ from package_processor import generate_output_files
 from repo_utils import fetch_dependencies, validate_inputs
 
 
-def main(repo_path: str, ref1: str, ref2: str, skip_unchanged: bool, skip_sdk_packages: bool, max_workers: int = None):
+def main(
+    repo_path: str,
+    ref1: str,
+    ref2: str,
+    skip_unchanged: bool,
+    skip_sdk_packages: bool,
+    max_workers: int | None = None,
+):
     try:
-        # Validate inputs
         repo = validate_inputs(repo_path, ref1, ref2)
-        
-        # Fetch dependencies
-        packages_filter = []
+
+        packages_filter: list[str] = []
         deps1, deps2 = fetch_dependencies(repo, ref1, ref2, packages_filter)
 
-        # Generate all outputs
         with tempfile.TemporaryDirectory() as temp_dir:
             output_diff_file = generate_output_files(
-                deps1, deps2, ref1, ref2, temp_dir, 
-                skip_unchanged, skip_sdk_packages, max_workers
+                deps1,
+                deps2,
+                ref1,
+                ref2,
+                temp_dir,
+                skip_unchanged,
+                skip_sdk_packages,
+                max_workers,
             )
-                
+
         logging.info(
             f"Dependency code diff process completed successfully. Diff file saved to {output_diff_file}"
         )
@@ -42,7 +52,6 @@ def main(repo_path: str, ref1: str, ref2: str, skip_unchanged: bool, skip_sdk_pa
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         description="Generate dependency code diffs between two Git refs."
     )
@@ -73,4 +82,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     configure_logging(args.verbose)
-    main(args.repo_path, args.ref1, args.ref2, args.skip_unchanged, args.skip_sdk_packages, args.max_workers)
+    main(
+        args.repo_path,
+        args.ref1,
+        args.ref2,
+        args.skip_unchanged,
+        args.skip_sdk_packages,
+        args.max_workers,
+    )
