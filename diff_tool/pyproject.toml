@@ -30,3 +30,6 @@ python_files = "test_*.py"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+diff = "diff_tool.diff_tool:cli"

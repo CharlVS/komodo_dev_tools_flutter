@@ -6,6 +6,7 @@ from typing import Any, Tuple, Optional
 
 import yaml
 from git import GitCommandError, Repo
+from diff_tool.summary import generate_unchanged_dependencies_report
 
 
 def get_dependencies(
@@ -243,7 +244,7 @@ def generate_diff(
     output_file: str,
     deps1: dict[str, Any],
     deps2: dict[str, Any],
-) -> tuple[bool, dict[str, dict]]:
+) -> tuple[bool, dict[str, tuple]]:
     """
     Generate diff between two directories and split by subdirectories.
 
@@ -272,12 +273,12 @@ def generate_diff(
         main_diff_success = run_git_diff(old_dir, new_dir, output_file)
         if not main_diff_success:
             logging.error("Failed to generate main diff file")
-            return False
+            return False, {}
 
         exists_and_valid, error_message = check_directory_exists(new_dir)
         if not exists_and_valid:
             logging.error(f"New directory check failed: {error_message}")
-            return False
+            return False, {}
 
         failed_packages = []
         for package_dir in os.listdir(new_dir):
@@ -362,14 +363,14 @@ def filter_monorepo_packages(base_dir: str, deps: dict[str, Any]) -> None:
 def _get_package_ref_info(pkg: dict[str, Any]) -> tuple[str, str]:
     """
     Extract reference type and value from a package.
-    
+
     Returns a tuple of (ref_type, ref_value) where:
     - ref_type is either 'git', 'pub', or 'unknown'
     - ref_value is the actual reference value (sha256 or resolved-ref)
-    
+
     Args:
         pkg: Dictionary containing package information
-        
+
     Returns:
         Tuple of (ref_type, ref_value)
     """
@@ -378,13 +379,13 @@ def _get_package_ref_info(pkg: dict[str, Any]) -> tuple[str, str]:
         sha256 = pkg_desc.get("sha256")
         if sha256:
             return "pub", sha256
-            
+
     resolved_ref = pkg_desc.get("resolved-ref") if isinstance(pkg_desc, dict) else None
     if not resolved_ref:
         resolved_ref = pkg.get("resolved-ref")
     if resolved_ref:
         return "git", resolved_ref
-        
+
     return "unknown", ""
 
 
@@ -395,7 +396,7 @@ def identify_unchanged_dependencies(
     Identify dependencies that haven't changed between two versions.
 
     A dependency is considered unchanged if:
-    1. It has the same version 
+    1. It has the same version
     2. It has the same reference type (git or pub)
     3. It has the same reference value (sha256 or resolved-ref)
 
@@ -436,7 +437,7 @@ def identify_unchanged_dependencies(
                 f"Reference type change for {package_name}: {old_ref_type} -> {new_ref_type}"
             )
             continue
-            
+
         if old_ref_value != new_ref_value:
             logging.debug(
                 f"Reference value change for {package_name}: {old_ref_value} -> {new_ref_value}"
@@ -446,70 +447,3 @@ def identify_unchanged_dependencies(
         unchanged_deps[package_name] = (old_pkg, new_pkg)
 
     return unchanged_deps
-
-
-def generate_unchanged_dependencies_report(
-    unchanged_deps: dict[str, tuple[dict, dict]], output_file: str
-) -> None:
-    """
-    Generate a report file listing all unchanged dependencies.
-
-    Args:
-        unchanged_deps: Dictionary mapping package names to tuples of (old_pkg_info, new_pkg_info)
-        output_file: Path to write the report output
-    """
-    try:
-        with open(output_file, "w") as f:
-            f.write("# Unchanged Dependencies Report\n\n")
-            f.write(
-                "This file lists dependencies that remained unchanged between versions.\n"
-            )
-            f.write(
-                "These dependencies resulted in empty diff files that were cleaned up.\n\n"
-            )
-
-            f.write("| Package | Version | Source | Old SHA/Ref | New SHA/Ref |\n")
-            f.write("|---------|---------|--------|-----------|-----------|\n")
-
-            for package_name in sorted(unchanged_deps.keys()):
-                old_pkg_info, new_pkg_info = unchanged_deps[package_name]
-                version = new_pkg_info.get("version", "N/A")
-                source = new_pkg_info.get("source", "N/A")
-
-                old_pkg_desc = old_pkg_info.get("description", {})
-                if not isinstance(old_pkg_desc, dict):
-                    old_pkg_desc = {}
-
-                old_sha256 = old_pkg_desc.get("sha256")
-                old_resolved_ref = old_pkg_desc.get("resolved-ref") or old_pkg_info.get(
-                    "resolved-ref"
-                )
-
-                if old_sha256:
-                    old_sha_or_ref = f"pub:{old_sha256}"
-                elif old_resolved_ref:
-                    old_sha_or_ref = f"git:{old_resolved_ref}"
-                else:
-                    old_sha_or_ref = "N/A"
-
-                new_pkg_desc = new_pkg_info.get("description", {})
-                if not isinstance(new_pkg_desc, dict):
-                    new_pkg_desc = {}
-
-                new_sha256 = new_pkg_desc.get("sha256")
-                new_resolved_ref = new_pkg_desc.get("resolved-ref") or new_pkg_info.get(
-                    "resolved-ref"
-                )
-
-                if new_sha256:
-                    new_sha_or_ref = f"pub:{new_sha256}"
-                elif new_resolved_ref:
-                    new_sha_or_ref = f"git:{new_resolved_ref}"
-                else:
-                    new_sha_or_ref = "N/A"
-
-                f.write(f"| {package_name} | {version} | {source} | {old_sha_or_ref} | {new_sha_or_ref} |\n")
-
-        logging.info(f"Unchanged dependencies report written to {output_file}")
-    except Exception as e:
-        logging.error(f"Error generating unchanged dependencies report: {e}")

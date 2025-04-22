@@ -409,7 +409,7 @@ class SDKPackageDownloader:
             if self.package_name in dirs:
                 return os.path.join(root, self.package_name)
 
-        return None
+        return ''
 
     def _copy_package(self, source_path: str) -> None:
         """

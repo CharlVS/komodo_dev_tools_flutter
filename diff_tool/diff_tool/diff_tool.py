@@ -6,9 +6,9 @@ import tempfile
 
 from git import GitCommandError
 
-from logging_utils import configure_logging
-from package_processor import generate_output_files
-from repo_utils import fetch_dependencies, validate_inputs
+from diff_tool.logging_utils import configure_logging
+from diff_tool.package_processor import generate_output_files
+from diff_tool.repo_utils import fetch_dependencies, validate_inputs
 
 
 def main(
@@ -51,7 +51,8 @@ def main(
         sys.exit(1)
 
 
-if __name__ == "__main__":
+def cli():
+    """Entry point for the command-line interface."""
     parser = argparse.ArgumentParser(
         description="Generate dependency code diffs between two Git refs."
     )
@@ -90,3 +91,7 @@ if __name__ == "__main__":
         args.skip_sdk_packages,
         args.max_workers,
     )
+
+
+if __name__ == "__main__":
+    cli()

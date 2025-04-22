@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 
 from git import GitCommandError, Repo
 
-from git_diff import get_dependencies
+from diff_tool.git_diff import get_dependencies
 
 
 def validate_repository(repo_path: str) -> Repo:

@@ -8,13 +8,13 @@ from typing import Dict, Tuple, Optional, Any
 
 from tqdm import tqdm
 
-from git_diff import generate_diff
-from sources import download_dart_package_sources, FlutterSDKCache
-from summary import (
+from diff_tool.git_diff import generate_diff
+from diff_tool.sources import download_dart_package_sources, FlutterSDKCache
+from diff_tool.summary import (
     generate_summary_table,
     # generate_summary_table_with_calculated_hashes,
 )
-from sources import FlutterSDKCache
+from diff_tool.sources import FlutterSDKCache
 
 
 def _process_single_package(
