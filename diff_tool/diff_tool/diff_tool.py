@@ -27,6 +27,7 @@ def main(
 
         with tempfile.TemporaryDirectory() as temp_dir:
             output_diff_file = generate_output_files(
+                repo,
                 deps1,
                 deps2,
                 ref1,

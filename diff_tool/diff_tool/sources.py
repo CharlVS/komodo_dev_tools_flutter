@@ -72,7 +72,11 @@ def with_retry(
 
 
 def download_dart_package_sources(
-    package_name: str, package_info: dict[str, Any], temp_dir: str, max_retries: int = 3
+    package_name: str,
+    package_info: dict[str, Any],
+    temp_dir: str,
+    max_retries: int = 3,
+    worktree_path: str | None = None,
 ) -> str:
     package_dir = os.path.join(temp_dir, package_name)
     os.makedirs(package_dir, exist_ok=True)
@@ -88,7 +92,7 @@ def download_dart_package_sources(
         elif package_source == "git":
             clone_dart_package_from_git(package_info, package_dir)
         elif package_source == "path":
-            copy_dart_package_from_path(package_info, package_dir)
+            copy_dart_package_from_path(package_info, package_dir, worktree_path)
         elif package_source == "sdk":
             download_dart_package_from_sdk(package_name, package_info, package_dir)
         else:
@@ -115,6 +119,15 @@ def clone_dart_package_from_git(package_info, package_dir):
         Repo.clone_from(package_info["description"]["url"], temp_repo_dir)
         repo = Repo(temp_repo_dir)
         repo.git.checkout(package_info["description"]["resolved-ref"])
+
+        # Initialize submodules if they exist
+        try:
+            logging.debug("Checking for git submodules...")
+            repo.git.submodule("update", "--init", "--recursive")
+            logging.info("Git submodules initialized successfully")
+        except GitCommandError as e:
+            # It's okay if there are no submodules or if this fails
+            logging.debug(f"No submodules to initialize or error occurred: {e}")
 
         if path and path.strip():
             source_path = os.path.join(temp_repo_dir, path.strip())
@@ -162,13 +175,16 @@ def download_dart_package_sources_from_pub(
 
 
 @with_retry(max_retries=3)
-def copy_dart_package_from_path(package_info: dict[str, Any], package_dir: str):
+def copy_dart_package_from_path(
+    package_info: dict[str, Any], package_dir: str, worktree_path: str | None = None
+):
     """
     Copy a Dart package from a local path.
 
     Args:
         package_info: Package information from pubspec.lock
         package_dir: Directory to copy the package to
+        worktree_path: Path to the git worktree where path dependencies should be resolved
     """
     description = package_info.get("description", {})
     if isinstance(description, str):
@@ -184,18 +200,29 @@ def copy_dart_package_from_path(package_info: dict[str, Any], package_dir: str):
     if os.path.isabs(path):
         base_directories.append("")
     else:
+        # If worktree_path is provided, use it as the primary base directory
+        # This allows path dependencies to be resolved from the checked-out repository
+        if worktree_path and os.path.exists(worktree_path):
+            base_directories.append(worktree_path)
+            logging.debug(
+                f"Using worktree path for path dependency resolution: {worktree_path}"
+            )
+
+        # Fallback to temp directory structure for backwards compatibility
         temp_root = os.path.dirname(
             os.path.dirname(package_dir)
         )  # Up two levels from package_dir
 
-        base_directories = [
-            temp_root,  # The temp directory itself
-            os.path.dirname(temp_root),  # Parent of temp directory
-            os.path.join(temp_root, "packages"),  # packages/ subdirectory
-            os.path.join(
-                os.path.dirname(temp_root), "packages"
-            ),  # Parent's packages/ subdirectory
-        ]
+        base_directories.extend(
+            [
+                temp_root,  # The temp directory itself
+                os.path.dirname(temp_root),  # Parent of temp directory
+                os.path.join(temp_root, "packages"),  # packages/ subdirectory
+                os.path.join(
+                    os.path.dirname(temp_root), "packages"
+                ),  # Parent's packages/ subdirectory
+            ]
+        )
 
     # Try each potential base directory
     found = False
@@ -409,7 +436,7 @@ class SDKPackageDownloader:
             if self.package_name in dirs:
                 return os.path.join(root, self.package_name)
 
-        return ''
+        return ""
 
     def _copy_package(self, source_path: str) -> None:
         """
